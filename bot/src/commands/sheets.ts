@@ -1,7 +1,8 @@
 // src/commands/sheets.ts
 
-import { AttachmentBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { screenshotSheet, SheetNotPublicError } from '../services/sheetsService';
+import { buildRefreshButton } from '../components/sheetsRefreshButton';
 import { config } from '../config';
 import { logger } from '../logger';
 
@@ -24,7 +25,8 @@ export async function handleSheets(interaction: ChatInputCommandInteraction): Pr
   try {
     const png = await screenshotSheet(url, config.sheetsApiKey);
     const attachment = new AttachmentBuilder(png, { name: 'sheet.png' });
-    await interaction.followUp({ files: [attachment] });
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(buildRefreshButton(url));
+    await interaction.followUp({ files: [attachment], components: [row] });
   } catch (err) {
     if (err instanceof SheetNotPublicError) {
       await interaction.followUp('That sheet doesn\'t appear to be public. Make sure sharing is set to "Anyone with the link".');
