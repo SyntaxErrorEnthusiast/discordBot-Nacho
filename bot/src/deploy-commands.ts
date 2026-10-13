@@ -1,44 +1,30 @@
 // src/deploy-commands.ts
 
 import { REST, Routes, SlashCommandBuilder } from 'discord.js';
-import { config } from 'dotenv';
-
-config();
-
-const token = process.env.BOT_TOKEN;
-const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID; // Optional: For guild-specific commands
+import { config } from './config';
 
 const commands = [
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Replies with Pong!'),
   new SlashCommandBuilder()
-    .setName('echo')
-    .setDescription('Replies with your input!')
+    .setName('sheets')
+    .setDescription('Screenshots a public Google Sheet and posts it here.')
     .addStringOption((option) =>
-      option.setName('message').setDescription('The message to echo').setRequired(true)
-    ),
-  new SlashCommandBuilder()
-    .setName('bitch')
-    .setDescription('Replies with your input!')
-    .addStringOption((option) =>
-      option.setName('message').setDescription('The message to bitch').setRequired(true)
+      option.setName('url').setDescription('The public Google Sheets URL').setRequired(true)
     ),
 ].map((command) => command.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(token!);
+const rest = new REST({ version: '10' }).setToken(config.botToken);
 
 (async () => {
   try {
     console.log('Started refreshing application (/) commands.');
 
-    if (guildId) {
-      // For guild-specific commands
-      await rest.put(Routes.applicationGuildCommands(clientId!, guildId), { body: commands });
+    if (config.guildId) {
+      await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: commands });
     } else {
-      // For global commands
-      await rest.put(Routes.applicationCommands(clientId!), { body: commands });
+      await rest.put(Routes.applicationCommands(config.clientId), { body: commands });
     }
 
     console.log('Successfully reloaded application (/) commands.');

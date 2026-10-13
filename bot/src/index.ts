@@ -1,40 +1,40 @@
 // src/index.ts
 
 import { Client, IntentsBitField, Interaction } from 'discord.js';
-import { config } from 'dotenv';
-
-config(); // Load environment variables from .env file
-
-const token = process.env.BOT_TOKEN;
+import { config } from './config';
+import { logger } from './logger';
+import { handlePing } from './commands/ping';
+import { handleSheets } from './commands/sheets';
 
 const client = new Client({
   intents: [IntentsBitField.Flags.Guilds],
 });
 
 client.once('ready', () => {
-  console.log(`Logged in as ${client.user?.tag}!`);
+  logger.info(`Logged in as ${client.user?.tag}`);
 });
 
 client.on('interactionCreate', async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
+  const ctx = {
+    command: commandName,
+    userId: interaction.user.id,
+    guildId: interaction.guildId ?? undefined,
+  };
 
   switch (commandName) {
     case 'ping':
-      await interaction.reply('Pong!');
+      await handlePing(interaction);
       break;
-    case 'echo':
-      var message = interaction.options.getString('message');
-      await interaction.reply(message || 'No message provided.');
-      break;
-    case 'bitch':
-      var message = interaction.options.getString('message');
-      await interaction.reply(message || 'No message provided.');
+    case 'sheets':
+      await handleSheets(interaction);
       break;
     default:
-     interaction.reply('Invalid Command');
-    }
+      logger.warn('Unknown command received', ctx);
+      await interaction.reply({ content: 'Unknown command.', ephemeral: true });
+  }
 });
 
-client.login(token);
+client.login(config.botToken);
