@@ -2,7 +2,6 @@
 // Business logic for fetching and rasterising public Google Sheets.
 
 import { google } from 'googleapis';
-import { pdf } from 'pdf-to-img';
 import sharp from 'sharp';
 import { logger } from '../logger';
 
@@ -130,6 +129,7 @@ async function exportAsPdf(spreadsheetId: string, gid: number, range: string): P
  * Rasterizes the first page of a PDF buffer to a trimmed PNG buffer.
  */
 async function pdfToTrimmedPng(pdfBuf: Buffer): Promise<Buffer> {
+  const { pdf } = await import('pdf-to-img');
   const doc = await pdf(pdfBuf, { scale: 3 });
 
   if (doc.length > 1) {
