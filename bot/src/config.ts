@@ -16,7 +16,6 @@ function requireEnv(name: string): string {
 
 export const config = {
   botToken: requireEnv('BOT_TOKEN'),
-  steamApiKey: requireEnv('STEAM_API_KEY'),
   sheetsApiKey: requireEnv('SHEETS_KEY'),
   clientId: requireEnv('CLIENT_ID'),
   // GUILD_ID is optional — omitting it deploys commands globally
