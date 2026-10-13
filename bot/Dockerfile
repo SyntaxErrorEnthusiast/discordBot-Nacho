@@ -1,21 +1,27 @@
 # Dockerfile
+FROM node:18-slim AS builder
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+COPY tsconfig.json ./
+
+RUN npm ci
+
+COPY src/ ./src/
+
+RUN npm run build
+
+# ---- Final image ----
 FROM node:18-slim
 
 WORKDIR /usr/src/app
 
-# Copy package files
 COPY package*.json ./
-COPY tsconfig.json ./
-COPY .env ./
 
-# Install dependencies
-RUN npm install
+# Install production dependencies only
+RUN npm ci --omit=dev
 
-# Copy source code
-COPY src/ ./src/
+COPY --from=builder /usr/src/app/dist ./dist
 
-# Build TypeScript code
-RUN npm run build
-
-# Command to run the bot
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
