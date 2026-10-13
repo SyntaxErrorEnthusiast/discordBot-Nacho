@@ -1,5 +1,5 @@
 # Dockerfile
-FROM node:18-slim AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -13,7 +13,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # ---- Final image ----
-FROM node:18-slim
+FROM node:20-slim
 
 WORKDIR /usr/src/app
 
