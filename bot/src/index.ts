@@ -3,7 +3,6 @@
 import { Client, IntentsBitField, Interaction } from 'discord.js';
 import { config } from './config';
 import { logger } from './logger';
-import { handlePing } from './commands/ping';
 import { handleSheets } from './commands/sheets';
 import { handleSheetsRefresh, SHEETS_REFRESH_PREFIX } from './components/sheetsRefreshButton';
 
@@ -34,9 +33,6 @@ client.on('interactionCreate', async (interaction: Interaction) => {
   };
 
   switch (commandName) {
-    case 'ping':
-      await handlePing(interaction);
-      break;
     case 'sheets':
       await handleSheets(interaction);
       break;

@@ -5,9 +5,6 @@ import { config } from './config';
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('ping')
-    .setDescription('Replies with Pong!'),
-  new SlashCommandBuilder()
     .setName('sheets')
     .setDescription('Screenshots a public Google Sheet and posts it here.')
     .addStringOption((option) =>

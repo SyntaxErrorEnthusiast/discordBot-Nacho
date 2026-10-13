@@ -6,7 +6,6 @@ A Discord bot built with [discord.js](https://discord.js.org/) and TypeScript.
 
 | Command | Description |
 |---|---|
-| `/ping` | Replies with Pong! |
 | `/sheets <url>` | Screenshots a public Google Sheet and posts it |
 
 ## Prerequisites
