@@ -1,0 +1,9 @@
+services:
+
+  # Go bot — on startup: deploys slash commands, then runs the bot.
+  go-bot:
+    build:
+      context: ./go-bot
+    env_file:
+      - ./go-bot/.env
+    restart: unless-stopped

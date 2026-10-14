@@ -103,3 +103,8 @@ Modularity does not mean maximizing the number of files, interfaces, or layers. 
 - Do not rewrite neighboring code merely to make it match a preferred style.
 - Ask before making architectural decisions with material tradeoffs or introducing significant new infrastructure.
 - Explain meaningful design decisions and tradeoffs in the completion report.
+
+## Code style preferences
+
+- Prefer readable, concise code over clever or overly abstract solutions. If a straightforward approach works, use it.
+- Use verbose, descriptive variable names. Avoid single-letter names, abbreviations, or terse shorthand. A name should clearly communicate what the variable holds without needing surrounding context to decode it.
