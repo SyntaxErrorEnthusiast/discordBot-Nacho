@@ -29,9 +29,43 @@ import (
 // indicating the sheet is private or inaccessible without authentication.
 var ErrSheetNotPublic = errors.New("sheet is not public or could not be accessed")
 
-// parseSheetURL extracts the spreadsheet ID and sheet gid from a Google Sheets URL.
+// SheetInfo holds the display name and numeric ID of a single tab in a spreadsheet.
+type SheetInfo struct {
+	Title string
+	GID   int64
+}
+
+// ListSheets returns all visible tabs in the given spreadsheet.
+func ListSheets(requestContext context.Context, spreadsheetID string, sheetsAPIKey string) ([]SheetInfo, error) {
+	sheetsService, serviceCreationError := sheets.NewService(requestContext, option.WithAPIKey(sheetsAPIKey))
+	if serviceCreationError != nil {
+		return nil, fmt.Errorf("creating Google Sheets API client: %w", serviceCreationError)
+	}
+
+	spreadsheetMetadata, metadataFetchError := sheetsService.Spreadsheets.Get(spreadsheetID).
+		Fields("sheets(properties(sheetId,title,hidden))").
+		Context(requestContext).
+		Do()
+	if metadataFetchError != nil {
+		return nil, fmt.Errorf("fetching spreadsheet metadata: %w", metadataFetchError)
+	}
+
+	var sheetInfoList []SheetInfo
+	for _, sheetEntry := range spreadsheetMetadata.Sheets {
+		if sheetEntry.Properties == nil || sheetEntry.Properties.Hidden {
+			continue
+		}
+		sheetInfoList = append(sheetInfoList, SheetInfo{
+			Title: sheetEntry.Properties.Title,
+			GID:   sheetEntry.Properties.SheetId,
+		})
+	}
+	return sheetInfoList, nil
+}
+
+// ParseSheetURL extracts the spreadsheet ID and sheet gid from a Google Sheets URL.
 // Returns an error if the URL does not match the expected Google Sheets format.
-func parseSheetURL(rawSheetURL string) (spreadsheetID string, sheetGID int64, parseError error) {
+func ParseSheetURL(rawSheetURL string) (spreadsheetID string, sheetGID int64, parseError error) {
 	spreadsheetIDPattern := regexp.MustCompile(`/spreadsheets/d/([a-zA-Z0-9_-]+)`)
 	sheetGIDPattern := regexp.MustCompile(`[#&?]gid=(\d+)`)
 
@@ -64,12 +98,7 @@ func columnIndexToLetter(columnIndex int) string {
 
 // getUsedCellRange returns the A1 notation bounding box of non-empty cells in the sheet,
 // for example "A1:F20". Only cells with non-whitespace content are considered.
-func getUsedCellRange(
-	requestContext context.Context,
-	spreadsheetID string,
-	sheetGID int64,
-	sheetsAPIKey string,
-) (string, error) {
+func getUsedCellRange(requestContext context.Context, spreadsheetID string, sheetGID int64, sheetsAPIKey string) (string, error) {
 	sheetsService, serviceCreationError := sheets.NewService(requestContext, option.WithAPIKey(sheetsAPIKey))
 	if serviceCreationError != nil {
 		return "", fmt.Errorf("creating Google Sheets API client: %w", serviceCreationError)
@@ -165,7 +194,7 @@ func exportSheetAsPDF(spreadsheetID string, sheetGID int64, cellRange string) ([
 		exportQueryParams.Encode(),
 	)
 
-	httpResponse, requestError := http.Get(exportURL) //nolint:noctx
+	httpResponse, requestError := http.Get(exportURL)
 	if requestError != nil {
 		return nil, fmt.Errorf("PDF export HTTP request failed: %w", requestError)
 	}
@@ -296,16 +325,12 @@ func trimWhiteBorder(sourceImage image.Image) image.Image {
 	return sourceImage
 }
 
-// ScreenshotSheet takes a public Google Sheets URL and returns a PNG-encoded byte slice
-// of the sheet's non-empty content area, preserving all Google-rendered formatting.
+// ScreenshotSheetByGID renders a PNG screenshot of a specific tab in a spreadsheet,
+// identified by its numeric GID. This is the core rendering function; callers that
+// already have a parsed spreadsheet ID and GID should use this directly.
 //
 // Returns ErrSheetNotPublic if the sheet is private or requires authentication.
-func ScreenshotSheet(requestContext context.Context, rawSheetURL string, sheetsAPIKey string) ([]byte, error) {
-	spreadsheetID, sheetGID, parseError := parseSheetURL(rawSheetURL)
-	if parseError != nil {
-		return nil, parseError
-	}
-
+func ScreenshotSheetByGID(requestContext context.Context, spreadsheetID string, sheetGID int64, sheetsAPIKey string) ([]byte, error) {
 	usedCellRange, rangeError := getUsedCellRange(requestContext, spreadsheetID, sheetGID, sheetsAPIKey)
 	if rangeError != nil {
 		return nil, rangeError
@@ -317,4 +342,17 @@ func ScreenshotSheet(requestContext context.Context, rawSheetURL string, sheetsA
 	}
 
 	return renderPDFPageToTrimmedPNG(pdfBytes)
+}
+
+// ScreenshotSheet takes a public Google Sheets URL and returns a PNG-encoded byte slice
+// of the sheet's non-empty content area, preserving all Google-rendered formatting.
+//
+// Returns ErrSheetNotPublic if the sheet is private or requires authentication.
+func ScreenshotSheet(requestContext context.Context, rawSheetURL string, sheetsAPIKey string) ([]byte, error) {
+	spreadsheetID, sheetGID, parseError := ParseSheetURL(rawSheetURL)
+	if parseError != nil {
+		return nil, parseError
+	}
+
+	return ScreenshotSheetByGID(requestContext, spreadsheetID, sheetGID, sheetsAPIKey)
 }
