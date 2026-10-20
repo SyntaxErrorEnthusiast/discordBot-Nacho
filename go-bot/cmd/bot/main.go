@@ -6,6 +6,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -60,9 +61,11 @@ func main() {
 
 		case discordgo.InteractionMessageComponent:
 			customID := interaction.MessageComponentData().CustomID
-			if len(customID) >= len(components.SheetsRefreshButtonPrefix) &&
-				customID[:len(components.SheetsRefreshButtonPrefix)] == components.SheetsRefreshButtonPrefix {
+			switch {
+			case strings.HasPrefix(customID, components.SheetsRefreshButtonPrefix):
 				components.HandleSheetsRefreshButtonInteraction(session, interaction, applicationConfig.SheetsKey)
+			case strings.HasPrefix(customID, components.SheetsTabSelectPrefix):
+				components.HandleTabSelectInteraction(session, interaction, applicationConfig.SheetsKey)
 			}
 		}
 	})
